@@ -5,7 +5,7 @@
       "src": "webapp/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "webapp/dist"
+        "distDir": "dist"
       }
     },
     {
@@ -31,7 +31,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/webapp/dist/$1"
+      "dest": "/index.html"
     }
   ]
 }

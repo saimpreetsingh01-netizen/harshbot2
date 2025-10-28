@@ -1,0 +1,78 @@
+.scripts-page {
+  padding-bottom: 80px;
+}
+
+.scripts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.script-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--tg-theme-secondary-bg-color, #0f3460);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.script-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.script-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.script-content {
+  flex: 1;
+}
+
+.script-name {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  color: var(--tg-theme-text-color, #bbe1fa);
+  font-weight: 600;
+}
+
+.script-description {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color, #8e8e93);
+  line-height: 1.4;
+}
+
+.script-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #8e8e93);
+}
+
+.script-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.script-download-btn {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background: var(--tg-theme-button-color, #0f4c75);
+  color: var(--tg-theme-button-text-color, #fff);
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.script-download-btn:hover {
+  transform: scale(1.1);
+  background: var(--tg-theme-button-color, #1e6091);
+}

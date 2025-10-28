@@ -1,0 +1,75 @@
+.nfts-page {
+  padding-bottom: 80px;
+}
+
+.nfts-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.nft-card {
+  background: linear-gradient(135deg, var(--tg-theme-secondary-bg-color, #0f3460), #1a1a2e);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.nft-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--tg-theme-button-color, #0f4c75);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nft-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.nft-name {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  color: var(--tg-theme-text-color, #bbe1fa);
+  font-weight: 700;
+}
+
+.nft-description {
+  margin: 0 0 16px 0;
+  color: var(--tg-theme-hint-color, #8e8e93);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.nft-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color, #8e8e93);
+}
+
+.nft-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claim-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}

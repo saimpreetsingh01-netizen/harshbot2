@@ -1,0 +1,43 @@
+.navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--tg-theme-bg-color, #1a1a2e);
+  border-top: 1px solid var(--tg-theme-section-separator-color, #2d3250);
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--tg-theme-hint-color, #8e8e93);
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.nav-btn:hover {
+  transform: scale(1.05);
+}
+
+.nav-btn.active {
+  color: var(--tg-theme-button-color, #0f4c75);
+}
+
+.nav-icon {
+  font-size: 24px;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+}

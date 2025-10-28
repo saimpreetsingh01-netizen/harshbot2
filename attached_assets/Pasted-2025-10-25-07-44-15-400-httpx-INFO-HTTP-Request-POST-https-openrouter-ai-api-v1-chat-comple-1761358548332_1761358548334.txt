@@ -1,0 +1,37 @@
+2025-10-25 07:44:15,400 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 404 Not Found"
+2025-10-25 07:44:15,405 - telegram.ext.Application - ERROR - No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\telegram\ext\_application.py", line 1315, in process_update
+    await coroutine
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\telegram\ext\_handlers\basehandler.py", line 159, in handle_update
+    return await self.callback(update, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sys\Downloads\TelegramSoftwareBot (19)\TelegramSoftwareBot\handlers\user_commands.py", line 81, in ai_search_command
+    results = ai_search_software(query, db.software_collection, lang)
+  File "C:\Users\sys\Downloads\TelegramSoftwareBot (19)\TelegramSoftwareBot\services\ai_service.py", line 178, in ai_search_software
+    raise model_error  # Other error, re-raise
+    ^^^^^^^^^^^^^^^^^
+  File "C:\Users\sys\Downloads\TelegramSoftwareBot (19)\TelegramSoftwareBot\services\ai_service.py", line 150, in ai_search_software
+    chat_completion = client.chat.completions.create(
+        messages=[
+    ...<11 lines>...
+        max_tokens=300
+    )
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1156, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/chat/completions",
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<46 lines>...
+        stream_cls=Stream[ChatCompletionChunk],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sys\AppData\Local\Programs\Python\Python313\Lib\site-packages\openai\_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.NotFoundError: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-r1-distill-qwen-32b:free.', 'code': 404}, 'user_id': 'user_34WJEP9cISog5s49fMrdYyv90re'}

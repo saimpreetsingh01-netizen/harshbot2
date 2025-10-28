@@ -1,0 +1,20 @@
+2025-10-25 07:37:52,841 - openai._base_client - INFO - Retrying request to /chat/completions in 0.911114 seconds
+2025-10-25 07:37:55,979 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+🔍 OpenRouter error: Error code: 429 - {'error': {'message': 'Provider returned error', 'code': 429, 'metadata': {'raw': 'google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations', 'provider_name': 'Google'}}, 'user_id': 'user_34WJEP9cISog5s49fMrdYyv90re'}
+⚠️ Rate/Quota limit hit on API key, trying next one... (attempt 1/2)
+💡 Tip: OpenRouter free models have limits (20 req/min, 50 req/day)
+   Add $10 credits to get 1000 req/day: https://openrouter.ai/credits
+2025-10-25 07:37:59,243 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-10-25 07:37:59,244 - openai._base_client - INFO - Retrying request to /chat/completions in 0.380302 seconds
+2025-10-25 07:38:02,181 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2025-10-25 07:38:02,183 - openai._base_client - INFO - Retrying request to /chat/completions in 0.750989 seconds
+2025-10-25 07:38:05,084 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+🔍 OpenRouter error: Error code: 429 - {'error': {'message': 'Provider returned error', 'code': 429, 'metadata': {'raw': 'google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations', 'provider_name': 'Google'}}, 'user_id': 'user_34WEU0lyIELWckAgYwOnZswrC3q'}
+⚠️ Rate/Quota limit hit on API key, trying next one... (attempt 2/2)
+💡 Tip: OpenRouter free models have limits (20 req/min, 50 req/day)
+   Add $10 credits to get 1000 req/day: https://openrouter.ai/credits
+❌ All API keys exhausted or rate limited
+💡 Solutions:
+   1. Wait for quota reset (daily limits reset at 12:00 AM UTC)
+   2. Add more OpenRouter API keys with /addapikey
+   3. Add credits to your OpenRouter account for higher limits

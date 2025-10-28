@@ -62,6 +62,10 @@ application = None
 def get_application():
     global application
     if application is None:
+        if not BOT_TOKEN:
+            logger.error("TELEGRAM_BOT_TOKEN not found in environment variables!")
+            raise ValueError("TELEGRAM_BOT_TOKEN is required")
+        
         try:
             init_database()
             logger.info("Database connected successfully")

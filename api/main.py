@@ -17,15 +17,20 @@ load_dotenv()
 # Import database utilities
 import sys
 sys.path.append('..')
-from utils.database import (
-    software_collection, movies_collection, nfts_collection,
-    game_scripts_collection, users_collection, downloads_collection,
-    init_database
-)
+from utils import database
 from services.url_shortener import shorten_url
 
 # Initialize database
-init_database()
+database.init_database()
+
+# Get collection references after initialization
+software_collection = database.software_collection
+movies_collection = database.movies_collection
+nfts_collection = database.nfts_collection
+game_scripts_collection = database.game_scripts_collection
+users_collection = database.users_collection
+downloads_collection = database.downloads_collection
+url_cache_collection = database.url_cache_collection
 
 app = FastAPI(title="Telegram Mini App API")
 
@@ -84,6 +89,34 @@ def verify_telegram_webapp_data(init_data: str) -> Optional[Dict]:
 @app.get("/")
 async def root():
     return {"message": "Telegram Mini App API", "status": "online"}
+
+@app.get("/api/stats")
+async def get_stats():
+    """Get database statistics"""
+    try:
+        stats = {
+            "database_initialized": movies_collection is not None,
+            "collections": {}
+        }
+        
+        if software_collection:
+            stats["collections"]["software"] = software_collection.count_documents({})
+            stats["collections"]["games"] = software_collection.count_documents({"category": {"$regex": "game", "$options": "i"}})
+        
+        if movies_collection:
+            stats["collections"]["movies"] = movies_collection.count_documents({})
+            movie_categories = movies_collection.distinct("category")
+            stats["collections"]["movie_categories"] = movie_categories
+        
+        if nfts_collection:
+            stats["collections"]["nfts"] = nfts_collection.count_documents({})
+        
+        if game_scripts_collection:
+            stats["collections"]["game_scripts"] = game_scripts_collection.count_documents({})
+        
+        return stats
+    except Exception as e:
+        return {"error": str(e), "database_initialized": False}
 
 @app.get("/api/games")
 async def get_games(
@@ -172,6 +205,9 @@ async def get_movies(
 ):
     """Get movies with optional filtering"""
     try:
+        if movies_collection is None:
+            raise HTTPException(status_code=503, detail="Database not initialized")
+        
         query = {}
         
         if category and category != "all":
@@ -183,7 +219,7 @@ async def get_movies(
         skip = (page - 1) * limit
         
         movies = list(movies_collection.find(query)
-                     .sort("date_added", -1)
+                     .sort("created_at", -1)
                      .skip(skip)
                      .limit(limit))
         
@@ -199,6 +235,8 @@ async def get_movies(
             "page": page,
             "pages": (total + limit - 1) // limit
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -314,7 +352,6 @@ async def create_download(item_id: str, authorization: str = Header(None)):
             raise HTTPException(status_code=404, detail="No download links available")
         
         # Shorten URLs
-        from utils.database import url_cache_collection
         shortened_links = []
         
         for link_obj in original_links[:5]:

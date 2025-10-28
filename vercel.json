@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "cd webapp && npm install && npm run build",
-  "outputDirectory": "webapp/dist",
   "builds": [
+    {
+      "src": "webapp/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "webapp/dist"
+      }
+    },
     {
       "src": "api/webhook.py",
       "use": "@vercel/python"
@@ -26,7 +31,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/webapp/dist/$1"
     }
   ]
 }

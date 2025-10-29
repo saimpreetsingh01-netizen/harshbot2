@@ -102,6 +102,17 @@ async def get_stats():
         if software_collection:
             stats["collections"]["software"] = software_collection.count_documents({})
             stats["collections"]["games"] = software_collection.count_documents({"category": {"$regex": "game", "$options": "i"}})
+            stats["collections"]["games_with_links"] = software_collection.count_documents({
+                "category": {"$regex": "game", "$options": "i"},
+                "download_links": {"$exists": True, "$ne": []}
+            })
+            stats["collections"]["games_without_links"] = software_collection.count_documents({
+                "category": {"$regex": "game", "$options": "i"},
+                "$or": [
+                    {"download_links": {"$exists": False}},
+                    {"download_links": []}
+                ]
+            })
         
         if movies_collection:
             stats["collections"]["movies"] = movies_collection.count_documents({})
@@ -117,6 +128,38 @@ async def get_stats():
         return stats
     except Exception as e:
         return {"error": str(e), "database_initialized": False}
+
+@app.get("/api/item/{item_id}/check")
+async def check_item(item_id: str):
+    """Check if an item has download links - for debugging"""
+    try:
+        from bson import ObjectId
+        item = software_collection.find_one({"_id": ObjectId(item_id)})
+        
+        if not item:
+            item = movies_collection.find_one({"_id": ObjectId(item_id)})
+            if item:
+                return {
+                    "type": "movie",
+                    "name": item.get("title"),
+                    "has_download_link": bool(item.get("download_link") or item.get("page_url")),
+                    "download_link": item.get("download_link") or item.get("page_url"),
+                    "all_fields": list(item.keys())
+                }
+        else:
+            return {
+                "type": "software/game",
+                "name": item.get("name"),
+                "category": item.get("category"),
+                "has_download_links": bool(item.get("download_links")),
+                "num_download_links": len(item.get("download_links", [])),
+                "download_links": item.get("download_links", [])[:2],  # Show first 2 links
+                "all_fields": list(item.keys())
+            }
+        
+        return {"error": "Item not found"}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/api/games")
 async def get_games(
@@ -166,11 +209,18 @@ async def get_software(
 ):
     """Get software with optional filtering (excludes games)"""
     try:
-        # Exclude items with "game" in category
-        query = {"category": {"$not": {"$regex": "game", "$options": "i"}}}
+        # Build query to exclude games
+        query = {}
         
         if category and category != "all":
-            query["category"] = {"$regex": category, "$options": "i"}
+            # When category is specified, use it AND exclude games
+            query["$and"] = [
+                {"category": {"$regex": category, "$options": "i"}},
+                {"category": {"$not": {"$regex": "game", "$options": "i"}}}
+            ]
+        else:
+            # When no category (or "all"), just exclude games
+            query["category"] = {"$not": {"$regex": "game", "$options": "i"}}
         
         if search:
             query["name"] = {"$regex": search, "$options": "i"}
@@ -373,15 +423,29 @@ async def create_download(item_id: str, item_type: str = "software", authorizati
         # Shorten URLs
         shortened_links = []
         
-        for link_obj in original_links[:5]:
+        print(f"Processing {len(original_links)} download links for {item_type} {item_id}")
+        
+        for i, link_obj in enumerate(original_links[:5]):
             original_url = link_obj['url'] if isinstance(link_obj, dict) else link_obj
-            shortened_url, service_used = shorten_url(original_url, url_cache_collection)
+            print(f"  Link {i+1}: {original_url[:80]}...")
             
-            shortened_links.append({
-                'url': shortened_url,
-                'original': original_url,
-                'service': service_used
-            })
+            try:
+                shortened_url, service_used = shorten_url(original_url, url_cache_collection)
+                print(f"  Shortened to: {shortened_url[:80]} via {service_used}")
+                
+                shortened_links.append({
+                    'url': shortened_url,
+                    'original': original_url,
+                    'service': service_used
+                })
+            except Exception as e:
+                print(f"  ERROR shortening link {i+1}: {str(e)}")
+                # If shortening fails, use original link
+                shortened_links.append({
+                    'url': original_url,
+                    'original': original_url,
+                    'service': 'direct'
+                })
         
         # Record download
         downloads_collection.insert_one({

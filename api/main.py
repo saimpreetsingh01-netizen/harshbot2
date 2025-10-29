@@ -170,7 +170,13 @@ async def get_games(
 ):
     """Get games with optional filtering"""
     try:
-        query = {"category": {"$regex": "game", "$options": "i"}}
+        # Filter by type='game' OR category contains 'game' (for backward compatibility)
+        query = {
+            "$or": [
+                {"type": "game"},
+                {"category": {"$regex": "game", "$options": "i"}}
+            ]
+        }
         
         if category and category != "all":
             query["category"] = {"$regex": category, "$options": "i"}
@@ -209,18 +215,22 @@ async def get_software(
 ):
     """Get software with optional filtering (excludes games)"""
     try:
-        # Build query to exclude games
-        query = {}
-        
-        if category and category != "all":
-            # When category is specified, use it AND exclude games
-            query["$and"] = [
-                {"category": {"$regex": category, "$options": "i"}},
+        # Build query to exclude games - check both type field and category
+        query = {
+            "$and": [
+                {
+                    "$or": [
+                        {"type": {"$exists": False}},  # Old items without type field
+                        {"type": "software"}
+                    ]
+                },
                 {"category": {"$not": {"$regex": "game", "$options": "i"}}}
             ]
-        else:
-            # When no category (or "all"), just exclude games
-            query["category"] = {"$not": {"$regex": "game", "$options": "i"}}
+        }
+        
+        if category and category != "all":
+            # When category is specified, add it to the query
+            query["category"] = {"$regex": category, "$options": "i"}
         
         if search:
             query["name"] = {"$regex": search, "$options": "i"}
@@ -417,8 +427,25 @@ async def create_download(item_id: str, item_type: str = "software", authorizati
             # Software/games have download_links array
             original_links = item.get('download_links', [])
             if not original_links:
-                print(f"Game/Software {item_id} missing download links. Item: {item.get('name')}. Fields: {list(item.keys())}")
-                raise HTTPException(status_code=404, detail=f"'{item.get('name', 'This item')}' doesn't have download links. Use /fullscrapegame or /fullscrapesoft to scrape complete data with links.")
+                item_type_detected = item.get('type', '')
+                category = item.get('category', '')
+                is_game = item_type_detected == 'game' or 'game' in category.lower()
+                
+                print(f"Game/Software {item_id} missing download links. Item: {item.get('name')}. Type: {item_type_detected}. Fields: {list(item.keys())}")
+                
+                if is_game:
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"'{item.get('name', 'This game')}' doesn't have download links yet. "
+                        "This game was scraped quickly without download links. "
+                        "Please contact the admin to use /fullscrapegame to get download links for this item."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"'{item.get('name', 'This item')}' doesn't have download links yet. "
+                        "Please contact the admin to use /fullscrapesoft to get complete download links."
+                    )
         
         # Shorten URLs
         shortened_links = []
@@ -490,12 +517,28 @@ async def create_download(item_id: str, item_type: str = "software", authorizati
 async def get_categories():
     """Get all available categories"""
     try:
-        # Get all categories from software collection
-        all_categories = software_collection.distinct("category")
+        # Get game categories (using type field or category name)
+        game_categories_query = {
+            "$or": [
+                {"type": "game"},
+                {"category": {"$regex": "game", "$options": "i"}}
+            ]
+        }
+        game_categories = software_collection.distinct("category", game_categories_query)
         
-        # Separate games and software
-        game_categories = [cat for cat in all_categories if 'game' in cat.lower()]
-        software_categories = [cat for cat in all_categories if 'game' not in cat.lower()]
+        # Get software categories (excluding games)
+        software_categories_query = {
+            "$and": [
+                {
+                    "$or": [
+                        {"type": {"$exists": False}},
+                        {"type": "software"}
+                    ]
+                },
+                {"category": {"$not": {"$regex": "game", "$options": "i"}}}
+            ]
+        }
+        software_categories = software_collection.distinct("category", software_categories_query)
         
         # Get movie categories
         movie_categories = [

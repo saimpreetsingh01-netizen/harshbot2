@@ -102,10 +102,25 @@ def quick_scrape_listing_page(url: str, custom_category: Optional[str] = None) -
         soup = BeautifulSoup(response.content, 'html.parser')
         
         auto_category = extract_category_from_url(url)
-        category = custom_category or auto_category or 'Uncategorized'
-        
-        is_game_site = any(keyword in url.lower() for keyword in ['game', 'apunka', 'pcgame', 'fitgirl'])
+        # Comprehensive list of game site domains
+        game_sites = ['apunkagames', 'pcgamestorrents', 'fitgirl-repacks', 'oceanofgames',
+                     'skidrowreloaded', 'igg-games', 'steamunlocked', 'skidrowcodex',
+                     'codexgames', 'cpygames', 'repack-games', 'gog-games', 'crohasit',
+                     'downloadpcgames', 'pcgamesn', 'crackwatch', 'dodi-repacks']
+        is_game_site = any(site in url.lower() for site in game_sites)
         item_type = 'game' if is_game_site else 'software'
+        
+        # Ensure game categories contain 'Games' for proper filtering
+        if custom_category:
+            category = custom_category
+            if item_type == 'game' and 'game' not in category.lower():
+                category = f"{category} Games"
+        elif auto_category:
+            category = auto_category
+            if item_type == 'game' and 'game' not in category.lower():
+                category = f"{category} Games"
+        else:
+            category = 'Games' if item_type == 'game' else 'Uncategorized'
         
         items = []
         
@@ -300,7 +315,25 @@ def quick_scrape_multiple_pages(base_url: str, max_pages: int, custom_category: 
     all_items = []
     
     auto_category = extract_category_from_url(base_url)
-    category = custom_category or auto_category or 'Uncategorized'
+    # Comprehensive list of game site domains
+    game_sites = ['apunkagames', 'pcgamestorrents', 'fitgirl-repacks', 'oceanofgames',
+                 'skidrowreloaded', 'igg-games', 'steamunlocked', 'skidrowcodex',
+                 'codexgames', 'cpygames', 'repack-games', 'gog-games', 'crohasit',
+                 'downloadpcgames', 'pcgamesn', 'crackwatch', 'dodi-repacks']
+    is_game_site = any(site in base_url.lower() for site in game_sites)
+    item_type = 'game' if is_game_site else 'software'
+    
+    # Ensure game categories contain 'Games' for proper filtering
+    if custom_category:
+        category = custom_category
+        if item_type == 'game' and 'game' not in category.lower():
+            category = f"{category} Games"
+    elif auto_category:
+        category = auto_category
+        if item_type == 'game' and 'game' not in category.lower():
+            category = f"{category} Games"
+    else:
+        category = 'Games' if item_type == 'game' else 'Uncategorized'
     
     logging.info(f"🚀 Quick scraping (NO AI) from {base_url}")
     logging.info(f"📂 Category: {category}")

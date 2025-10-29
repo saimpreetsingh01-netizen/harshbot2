@@ -44,7 +44,7 @@ from handlers.admin_commands import (
     addnft_command, listnfts_command, removenft_command,
     addgamescript_command, listgamescripts_command, removegamescript_command, setscriptviews_command,
     addmovie_command, listmovies_command, removemovie_command, setmovieviews_command,
-    moviescrape_command
+    moviescrape_command, fixcategories_command
 )
 from handlers.api_key_commands import (
     add_api_key_command, list_api_keys_command, remove_api_key_command,
@@ -151,6 +151,8 @@ def get_application():
         application.add_handler(CommandHandler("removemovie", removemovie_command))
         application.add_handler(CommandHandler("setmovieviews", setmovieviews_command))
         application.add_handler(CommandHandler("moviescrape", moviescrape_command))
+        
+        application.add_handler(CommandHandler("fixcategories", fixcategories_command))
         
         application.add_handler(CallbackQueryHandler(handle_download_button, pattern=r'^download_'))
         application.add_handler(CallbackQueryHandler(handle_category_callback, pattern=r'^cat_'))

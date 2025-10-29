@@ -9,7 +9,7 @@ const ItemCard = ({ item, type = 'software' }) => {
   const handleDownload = async () => {
     setLoading(true);
     try {
-      const response = await createDownload(item._id);
+      const response = await createDownload(item._id, type);
       const links = response.data.links;
 
       let message = `📦 ${item.name || item.title}\n\n⬇️ Download Links:\n\n`;
@@ -20,7 +20,9 @@ const ItemCard = ({ item, type = 'software' }) => {
 
       WebApp.showAlert(message);
     } catch (error) {
-      WebApp.showAlert('Error getting download links. Please try again.');
+      console.error('Download error:', error);
+      const errorMsg = error.response?.data?.detail || 'Error getting download links. Please try again.';
+      WebApp.showAlert(errorMsg);
     } finally {
       setLoading(false);
     }

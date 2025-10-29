@@ -164,9 +164,10 @@ async def get_software(
     page: int = 1,
     limit: int = 20
 ):
-    """Get software with optional filtering"""
+    """Get software with optional filtering (excludes games)"""
     try:
-        query = {}
+        # Exclude items with "game" in category
+        query = {"category": {"$not": {"$regex": "game", "$options": "i"}}}
         
         if category and category != "all":
             query["category"] = {"$regex": category, "$options": "i"}
@@ -359,13 +360,15 @@ async def create_download(item_id: str, item_type: str = "software", authorizati
             # Movies have a single download_link
             download_link = item.get('download_link') or item.get('page_url')
             if not download_link:
-                raise HTTPException(status_code=404, detail="No download link available")
+                print(f"Movie {item_id} missing download link. Fields: {list(item.keys())}")
+                raise HTTPException(status_code=404, detail="This movie doesn't have download links yet. Try using /fullscrapemovie command to get complete data.")
             original_links = [download_link]
         else:
             # Software/games have download_links array
             original_links = item.get('download_links', [])
             if not original_links:
-                raise HTTPException(status_code=404, detail="No download links available")
+                print(f"Game/Software {item_id} missing download links. Item: {item.get('name')}. Fields: {list(item.keys())}")
+                raise HTTPException(status_code=404, detail=f"'{item.get('name', 'This item')}' doesn't have download links. Use /fullscrapegame or /fullscrapesoft to scrape complete data with links.")
         
         # Shorten URLs
         shortened_links = []
@@ -423,8 +426,12 @@ async def create_download(item_id: str, item_type: str = "software", authorizati
 async def get_categories():
     """Get all available categories"""
     try:
-        # Get software categories
-        software_categories = software_collection.distinct("category")
+        # Get all categories from software collection
+        all_categories = software_collection.distinct("category")
+        
+        # Separate games and software
+        game_categories = [cat for cat in all_categories if 'game' in cat.lower()]
+        software_categories = [cat for cat in all_categories if 'game' not in cat.lower()]
         
         # Get movie categories
         movie_categories = [
@@ -435,6 +442,7 @@ async def get_categories():
         
         return {
             "software": sorted(software_categories),
+            "games": sorted(game_categories),
             "movies": movie_categories
         }
     except Exception as e:

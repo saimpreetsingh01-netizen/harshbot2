@@ -328,28 +328,44 @@ async def get_user_profile(authorization: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/download/{item_id}")
-async def create_download(item_id: str, authorization: str = Header(None)):
+async def create_download(item_id: str, item_type: str = "software", authorization: str = Header(None)):
     """Create download record and return shortened links"""
     try:
         if not authorization:
-            raise HTTPException(status_code=401, detail="Unauthorized")
+            print("WARNING: No authorization header provided")
+            raise HTTPException(status_code=401, detail="No authorization header. Make sure you're opening the miniapp from Telegram.")
         
         user_data = verify_telegram_webapp_data(authorization)
         if not user_data:
-            raise HTTPException(status_code=401, detail="Invalid authorization")
+            print(f"WARNING: Invalid authorization data: {authorization[:50]}...")
+            raise HTTPException(status_code=401, detail="Invalid Telegram authorization. Please restart the miniapp.")
         
         user_id = user_data.get('id')
+        print(f"Download request from user {user_id} for {item_type} {item_id}")
         
-        # Get item from database
-        item = software_collection.find_one({"_id": ObjectId(item_id)})
+        # Get item from appropriate collection
+        if item_type == "movie":
+            item = movies_collection.find_one({"_id": ObjectId(item_id)})
+            item_name = item.get('title') if item else None
+        else:
+            item = software_collection.find_one({"_id": ObjectId(item_id)})
+            item_name = item.get('name') if item else None
         
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         
-        original_links = item.get('download_links', [])
-        
-        if not original_links:
-            raise HTTPException(status_code=404, detail="No download links available")
+        # Get download links
+        if item_type == "movie":
+            # Movies have a single download_link
+            download_link = item.get('download_link') or item.get('page_url')
+            if not download_link:
+                raise HTTPException(status_code=404, detail="No download link available")
+            original_links = [download_link]
+        else:
+            # Software/games have download_links array
+            original_links = item.get('download_links', [])
+            if not original_links:
+                raise HTTPException(status_code=404, detail="No download links available")
         
         # Shorten URLs
         shortened_links = []
@@ -368,18 +384,25 @@ async def create_download(item_id: str, authorization: str = Header(None)):
         downloads_collection.insert_one({
             "user_id": user_id,
             "username": user_data.get('username', 'Unknown'),
-            "software_id": ObjectId(item_id),
-            "software_name": item['name'],
+            "item_id": ObjectId(item_id),
+            "item_type": item_type,
+            "item_name": item_name,
             "timestamp": datetime.now().isoformat(),
             "links_sent": shortened_links,
             "shorteners_used": [link['service'] for link in shortened_links]
         })
         
         # Update counters
-        software_collection.update_one(
-            {"_id": ObjectId(item_id)},
-            {"$inc": {"downloads_count": 1}}
-        )
+        if item_type == "movie":
+            movies_collection.update_one(
+                {"_id": ObjectId(item_id)},
+                {"$inc": {"views_count": 1}}
+            )
+        else:
+            software_collection.update_one(
+                {"_id": ObjectId(item_id)},
+                {"$inc": {"downloads_count": 1}}
+            )
         
         users_collection.update_one(
             {"user_id": user_id},

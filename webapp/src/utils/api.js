@@ -40,7 +40,7 @@ export const getMovies = (params) => api.get('/api/movies', { params });
 export const getNFTs = () => api.get('/api/nfts');
 export const getGameScripts = () => api.get('/api/gamescripts');
 export const getUserProfile = () => api.get('/api/user/profile');
-export const createDownload = (itemId) => api.post(`/api/download/${itemId}`);
+export const createDownload = (itemId, itemType = 'software') => api.post(`/api/download/${itemId}?item_type=${itemType}`);
 export const getCategories = () => api.get('/api/categories');
 
 export default api;

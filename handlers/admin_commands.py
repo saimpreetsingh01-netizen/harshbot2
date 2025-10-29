@@ -1724,3 +1724,139 @@ async def moviescrape_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             "Please check logs and try again.",
             parse_mode='Markdown'
         )
+
+async def fixcategories_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fix categorization for existing items in database"""
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("⛔ Admin only command!")
+        return
+    
+    progress_msg = await update.message.reply_text(
+        "🔧 **Fixing Database Categories**\n\n"
+        "⏳ Analyzing and updating items...",
+        parse_mode='Markdown'
+    )
+    
+    try:
+        # Find items that might need fixing:
+        # 1. Items without type field
+        # 2. Items marked as software but might be games (have "game" in category or from game sites)
+        items_to_check = list(db.software_collection.find({
+            "$or": [
+                {"type": {"$exists": False}},
+                {
+                    "type": "software",
+                    "$or": [
+                        {"category": {"$regex": "game", "$options": "i"}},
+                        {"source_url": {"$regex": "apunkagames|pcgamestorrents|fitgirl|oceanofgames|skidrow|igg-games|steamunlocked|codex|cpy|repack", "$options": "i"}}
+                    ]
+                }
+            ]
+        }))
+        
+        games_fixed = 0
+        software_fixed = 0
+        categories_updated = 0
+        
+        for item in items_to_check:
+            category_original = item.get('category', '')
+            category = category_original.lower()
+            name = item.get('name', '').lower()
+            source_url = item.get('source_url', '').lower()
+            
+            # Conservative approach - only fix obvious cases, leave ambiguous items unchanged
+            
+            # Software keywords that indicate it's a tool/utility (high priority override)
+            software_keywords = ['booster', 'maker', 'engine', 'bar', 'recorder', 'capture',
+                                'launcher', 'manager', 'tools', 'toolkit', 'utility',
+                                'activator', 'crack', 'keygen', 'patch', 'loader',
+                                'browser', 'security', 'antivirus', 'vpn', 'office',
+                                'productivity', 'editor', 'converter', 'compiler', 'ide',
+                                'framework', 'sdk', 'plugin', 'addon', 'mod tool']
+            
+            # Comprehensive list of game site domains - aligned with quick_scraper
+            game_sites = ['apunkagames', 'pcgamestorrents', 'fitgirl-repacks', 'oceanofgames',
+                         'skidrowreloaded', 'igg-games', 'steamunlocked', 'skidrowcodex',
+                         'codexgames', 'cpygames', 'repack-games', 'gog-games', 'crohasit',
+                         'downloadpcgames', 'pcgamesn', 'crackwatch', 'dodi-repacks']
+            
+            # Check if it's clearly software (highest priority)
+            is_software_tool = any(kw in category or kw in name for kw in software_keywords)
+            
+            # Check if it's from a trusted game source
+            is_from_game_site = any(site in source_url for site in game_sites)
+            
+            if is_software_tool:
+                # Explicitly software - don't misclassify tools
+                item_type = 'software'
+            elif 'game' in category and not is_software_tool:
+                # Category contains "game" and it's not a software tool → game
+                item_type = 'game'
+            elif is_from_game_site and not is_software_tool:
+                # From trusted game site and not a software tool → game
+                item_type = 'game'
+            else:
+                # Ambiguous - keep as software (safer default)
+                # The main fix is in quick_scraper.py for NEW items
+                item_type = 'software'
+            updates = {"type": item_type}
+            
+            # Fix category name for games
+            if item_type == 'game' and 'game' not in category:
+                if category_original and category_original != 'Uncategorized':
+                    new_category = f"{category_original} Games"
+                else:
+                    new_category = 'Games'
+                updates["category"] = new_category
+                categories_updated += 1
+            
+            # Update the item
+            db.software_collection.update_one(
+                {"_id": item["_id"]},
+                {"$set": updates}
+            )
+            
+            if item_type == 'game':
+                games_fixed += 1
+            else:
+                software_fixed += 1
+        
+        # Get updated counts
+        total_games = db.software_collection.count_documents({
+            "$or": [
+                {"type": "game"},
+                {"category": {"$regex": "game", "$options": "i"}}
+            ]
+        })
+        total_software = db.software_collection.count_documents({
+            "$and": [
+                {
+                    "$or": [
+                        {"type": {"$exists": False}},
+                        {"type": "software"}
+                    ]
+                },
+                {"category": {"$not": {"$regex": "game", "$options": "i"}}}
+            ]
+        })
+        
+        await progress_msg.edit_text(
+            f"✅ **Database Categories Fixed!**\n\n"
+            f"**Items Updated:**\n"
+            f"🎮 Games: {games_fixed}\n"
+            f"💻 Software: {software_fixed}\n"
+            f"📂 Categories renamed: {categories_updated}\n\n"
+            f"**New Totals:**\n"
+            f"🎮 Total Games: {total_games}\n"
+            f"💻 Total Software: {total_software}\n\n"
+            f"✨ Games should now appear correctly in the mini app!",
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logging.error(f"Error in fixcategories: {e}")
+        await progress_msg.edit_text(
+            f"❌ **Error Occurred**\n\n"
+            f"Error: {str(e)}",
+            parse_mode='Markdown'
+        )
